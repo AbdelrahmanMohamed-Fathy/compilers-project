@@ -1,4 +1,11 @@
+.PHONY: clean
+
+clean:
+	rm -rf bin
+
 all:
-	bison -d -v parser.y
-	flex lexerl.l
-	gcc parser.tab.c lex.yy.c -o compiler.exe
+	$(MAKE) clean
+	mkdir bin
+	bison -d -v parser/parser.y --file-prefix="bin/parser"
+	flex -o bin/lex.yy.c lexer/lexer.l
+	gcc bin/parser.tab.c bin/lex.yy.c -o bin/compiler.exe
