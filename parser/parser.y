@@ -22,13 +22,16 @@
 
 
 
-%type <integerValue> Addition Multiplication Power Term
+%type <integerValue> IntegerOperation Addition Multiplication Power Term
 
 /* CFG Rules */
 %%
 
 
-Declaration: VARIABLE EQUAL Addition | Addition
+Declaration: VARIABLE EQUAL IntegerOperation | IntegerOperation
+
+
+IntegerOperation: Addition
 Addition: Addition PLUS Multiplication | Addition MINUS Multiplication | Multiplication
 Multiplication: Multiplication STAR Power | Multiplication DIVIDE Power | Power
 Power: Term HAT Power | Term
