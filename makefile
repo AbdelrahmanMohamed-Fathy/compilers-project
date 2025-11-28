@@ -1,7 +1,10 @@
-.PHONY: all build clean
+.PHONY: all build clean test
 
 clean:
 	rm -rf bin
+
+test:
+	pytest
 
 build:
 	mkdir bin
@@ -12,3 +15,4 @@ build:
 all:
 	$(MAKE) clean
 	$(MAKE) build
+	$(MAKE) test
