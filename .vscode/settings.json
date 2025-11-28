@@ -2,5 +2,10 @@
     "editor.defaultFormatter": "ms-vscode.cpptools",
 	"editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-    "files.autoSave": "afterDelay"
+    "files.autoSave": "afterDelay",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
