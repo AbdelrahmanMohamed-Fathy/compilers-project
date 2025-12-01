@@ -19,18 +19,25 @@
 "*"             {return STAR;}
 "/"             {return DIVIDE;}
 "^"             {return HAT;}
+"%"             {return REMAINDER;}
 
     /* conditionals and assorted symbols */
-"!"             {}
-"&"             {}
-"%"             {}
-">"             {}
-"<"             {}
-"|"             {}
+"!"             {return NOT;}
+"&"             {return AMPERSAND;}
+">"             {return GREATER;}
+"<"             {return LESSER;}
+"|"             {return OR;}
+
+    /* Keywords */
+"while"         {return WHILE;}
+"for"           {return FOR;}
+"if"            {return IF;}
+"switch"        {return SWITCH;}
+"case"          {return CASE;}
 
     /* ignored */
 [ \t\n]     {/*ignore white space*/}
-(\/\/.*$)   {/*ignore single line comments*/}
+(\/\/.\n)   {/*ignore single line comments*/}
 
 
 %%

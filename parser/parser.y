@@ -22,20 +22,24 @@
 
 
 
-%type <integerValue> IntegerOperation Addition Multiplication Power Term
+%type <integerValue> IntergerExpression Addition Multiplication Power IntegerTerm
+%type <booleanValue> Statement StatementTerm
 
 /* CFG Rules */
 %%
 
 
-Declaration: VARIABLE EQUAL IntegerOperation | IntegerOperation
+Declaration: VARIABLE EQUAL Expression | Expression
+Expression: IntergerExpression 
 
-
-IntegerOperation: Addition
+IntergerExpression: Addition
 Addition: Addition PLUS Multiplication | Addition MINUS Multiplication | Multiplication
-Multiplication: Multiplication STAR Power | Multiplication DIVIDE Power | Power
-Power: Term HAT Power | Term
-Term: INTEGER 
-    | '(' Addition ')' {$$ = $2;}
+Multiplication: Multiplication STAR Power | Multiplication DIVIDE Power | MINUS Power | Power
+Power: IntegerTerm HAT Power | IntegerTerm
+IntegerTerm: INTEGER 
+    | '(' IntergerExpression ')' {$$ = $2;}
+
+Statement:  | Expression | StatementTerm
+StatementTerm: '(' Statement ')' | BOOLEAN
 
 %%
