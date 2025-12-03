@@ -1,5 +1,5 @@
 %{ 
-    #include "../lexer/lexer.c"
+    #include "../src/lexer.c"
 %}
 
 /* Regex Rules 
@@ -11,8 +11,8 @@
 [\w_][\w0-9_]+  {return VARIABLE;}
 
     /* numerals and assorted symbols */
+[()[\]{},]      {return yytext[0];}
 [0-9]+          {return INTEGER;}
-[()[\]{}]       {return yytext[0];}
 "-"             {return MINUS;}
 "+"             {return PLUS;}
 "="             {return EQUAL;}
@@ -32,6 +32,7 @@
 "while"         {return WHILE;}
 "for"           {return FOR;}
 "if"            {return IF;}
+"else"           {return ELSE;}
 "switch"        {return SWITCH;}
 "case"          {return CASE;}
 

@@ -6,4 +6,5 @@ import subprocess
 EXECUTABLE_PATH = "..bin/compiler.exe"
 
 
-
+def test_existance():
+    assert True
