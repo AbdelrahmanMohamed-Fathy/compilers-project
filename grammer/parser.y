@@ -43,8 +43,7 @@ Program: Function
 
 
     /* Functions */
-Function: FunctionDeclaration ';'
-        | FunctionDeclaration Statement
+Function: FunctionDeclaration Statement
 
 FunctionDeclaration: VARIABLE '(' ParameterList ')'
 ParameterList: ParameterList ',' VARIABLE | VARIABLE
