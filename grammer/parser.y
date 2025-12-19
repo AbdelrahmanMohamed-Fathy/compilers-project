@@ -15,11 +15,12 @@
 %token <integerValue>   INTEGER BOOLEAN
 %token <stringValue>    VARIABLE
 
-%token IF ELSE WHILE FOR SWITCH CASE
+%token IF ELSE DO WHILE FOR SWITCH CASE
 %token PLUS MINUS DIVIDE STAR REMAINDER HAT
 %token EQUAL NOT AMPERSAND OR GREATER LESSER
 
 /* --- Precedence & Associativity (Lowest to Highest) --- */
+
 
 /* 1. Resolve Dangling Else */
 %nonassoc LOWER_THAN_ELSE
@@ -50,6 +51,8 @@
 /* ================================================================ */
 Program: Function
 
+/* Declaration:  */
+
 Function: FunctionDeclaration Statement
 
 FunctionDeclaration: VARIABLE '(' ParameterList ')'
@@ -61,6 +64,8 @@ ParameterList: ParameterList ',' VARIABLE | VARIABLE | /* empty */
 Statement: Expression ';'
          | '{' StatementList '}' 
          | IfStatement
+         | LoopStatement
+         | SwitchStatement
          | ';'
          
 StatementList: StatementList Statement 
@@ -68,6 +73,15 @@ StatementList: StatementList Statement
 
 IfStatement: IF '(' Expression ')' Statement %prec LOWER_THAN_ELSE
            | IF '(' Expression ')' Statement ELSE Statement
+
+LoopStatement: WHILE '(' Expression ')' Statement
+             | DO Statement WHILE '(' Expression ')'
+             | FOR '(' Expression ';' Expression ';' Expression ')' Statement
+
+CaseStatement: CASE INTEGER ':' Statement CaseStatement | /* empty */
+
+SwitchStatement: SWITCH '(' Expression ')' '{' CaseStatement '}'
+
 
 /* ================================================================ */
 /* Combined Expressions */
