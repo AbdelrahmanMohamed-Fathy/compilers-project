@@ -3,6 +3,14 @@
 #include <stdlib.h>
 extern FILE *yyin;
 
+enum type
+{
+    INT,
+    FLOAT,
+    DOUBLE,
+    LONG
+};
+
 int yylex(void);
 
 void yyerror(const char *errMsg)
