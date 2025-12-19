@@ -11,7 +11,7 @@
 [\w_][\w0-9_]+  {return VARIABLE;}
 
     /* numerals and assorted symbols */
-[()[\]{},]      {return yytext[0];}
+[()[\]{},:;]    {return yytext[0];}
 [0-9]+          {return INTEGER;}
 "-"             {return MINUS;}
 "+"             {return PLUS;}
@@ -29,6 +29,7 @@
 "|"             {return OR;}
 
     /* Keywords */
+"do"            {return DO;}
 "while"         {return WHILE;}
 "for"           {return FOR;}
 "if"            {return IF;}
