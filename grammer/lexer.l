@@ -1,7 +1,7 @@
 %{
     #include <string.h>
     #include <stdlib.h>
-    #include "parser.tab.h" /* Connects to the tokens defined in parser.y */
+    #include "parser.tab.h"
     
     extern void yyerror(const char *msg);
 %}
@@ -57,7 +57,7 @@
 
     /* --- Whitespace & Comments --- */
 [ \t\n]         { /* ignore */ }
-"//".* { /* ignore single line comments */ }
+"//".*          { /* ignore single line comments */ }
 
 .               { yyerror("Unknown character"); }
 

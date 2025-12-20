@@ -13,10 +13,13 @@
     extern int yylineno;
     extern FILE* yyin;
 
+    int returnValue = 0;
+
     /* Semantic Helper: Check if variable exists before use */
     void check_usage(char* name) {
         if (lookup(name) == NULL) {
             fprintf(stderr, "Semantic Error at line %d: Variable '%s' used before declaration.\n", yylineno, name);
+            returnValue = 1;
         }
     }
 %}
@@ -195,5 +198,5 @@ int main(int argc, char **argv) {
         yyin = file;
     }
     yyparse();
-    return 0;
+    return returnValue;
 }
