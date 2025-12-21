@@ -4,7 +4,7 @@ clean:
 	rm -rf bin
 
 test:
-	pytest
+	pytest -s
 
 build:
 	mkdir bin

@@ -50,6 +50,12 @@ def test_should_compile(file_path):
     """
     result = run_compiler(file_path)
 
+    # --- Print output ---
+    print(f"\n[{file_path.name}] STDOUT:\n{result.stdout}")
+    if result.stderr:
+        print(f"[{file_path.name}] STDERR:\n{result.stderr}")
+    # -----------------------------------------------------
+
     error_msg = (
         f"File '{file_path.name}' failed to compile.\n"
         f"Stderr: {result.stderr}\n"
@@ -65,6 +71,12 @@ def test_should_not_compile(file_path):
     Expects the compiler to return a non-zero exit code (Failure).
     """
     result = run_compiler(file_path)
+
+    # --- Print output ---
+    print(f"\n[{file_path.name}] STDOUT:\n{result.stdout}")
+    if result.stderr:
+        print(f"[{file_path.name}] STDERR:\n{result.stderr}")
+    # -----------------------------------------------------
 
     error_msg = (
         f"File '{file_path.name}' compiled successfully, but should have failed.\n"
