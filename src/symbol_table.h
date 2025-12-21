@@ -3,9 +3,10 @@
 
 #define MAX_SYMBOLS 500
 
-typedef struct {
+typedef struct
+{
     char name[50];
-    int type;           // 1: INT, 2: FLOAT, 3: BOOL, etc.
+    int type; // 1: INT, 2: FLOAT, 3: BOOL, etc.
     int scope;
     int is_initialized; // For semantic check: "Variables used before being initialised"
 } Symbol;
@@ -16,8 +17,8 @@ extern int symbolCount;
 extern int current_scope;
 
 /* Function Prototypes */
-void insert(char* name, int type, int scope);
-Symbol* lookup(char* name);
+void insert(char *name, int type, int scope);
+Symbol *lookup(char *name);
 void enter_scope();
 void exit_scope();
 void print_symbol_table();

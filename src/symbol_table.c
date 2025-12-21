@@ -7,11 +7,14 @@ Symbol symbolTable[MAX_SYMBOLS];
 int symbolCount = 0;
 int current_scope = 0;
 
+extern int returnValue;
+
 void insert(char* name, int type, int scope) {
     // Check if already declared in SAME scope (Semantic Error check)
     for(int i = 0; i < symbolCount; i++) {
         if(strcmp(symbolTable[i].name, name) == 0 && symbolTable[i].scope == scope) {
             fprintf(stderr, "Semantic Error: Variable '%s' already declared in this scope.\n", name);
+            returnValue = 1;
             return;
         }
     }

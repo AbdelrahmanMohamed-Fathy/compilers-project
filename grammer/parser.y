@@ -3,7 +3,7 @@
     #include <stdlib.h>
     #include <math.h>
     #include <string.h>
-    
+
     /* Including logic files directly for simplicity in the build process */
     #include "../src/symbol_table.h"
     #include "../src/quads.h"
@@ -60,7 +60,7 @@
 
 /* ================================================================ */
 Program: StatementList { 
-            printf("\n--- Compilation Successful ---\n");
+            printf((returnValue == 0) ? ("\n--- Compilation Successful ---\n") : ("\n--- Compilation Failed ---\n"));
             print_symbol_table(); 
             print_quads(); 
          } ;
