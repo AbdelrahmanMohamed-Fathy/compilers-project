@@ -1,10 +1,13 @@
-.PHONY: all build clean test
+.PHONY: all build clean test quiet_test
 
 clean:
 	rm -rf bin
 
 test:
-	pytest -s
+	pytest -s --tb=no
+
+quiet_test:
+	pytest --tb=no
 
 build:
 	mkdir bin
@@ -15,4 +18,4 @@ build:
 all:
 	$(MAKE) clean
 	$(MAKE) build
-	$(MAKE) test
+	$(MAKE) quiet_test

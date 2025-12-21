@@ -186,6 +186,7 @@ Expression: INTEGER_LITERAL {
 
 void yyerror(const char *s) {
     fprintf(stderr, "Syntax Error at line %d: %s\n", yylineno, s);
+    returnValue = 1;
 }
 
 int main(int argc, char **argv) {
