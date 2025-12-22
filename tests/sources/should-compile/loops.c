@@ -34,3 +34,17 @@ until(y > 10);
 
 repeat;
 until(y > 10);
+
+do
+{
+    x = x + 1;
+}
+while(x > 10);
+
+do
+    y = y + 1;
+while (y > 10);
+
+do
+    ;
+while (y > 10);
