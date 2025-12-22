@@ -8,7 +8,7 @@ void func2(float y)
     return;
 }
 
-int func2()
+int func6()
 {
     int y;
     y + 1;
@@ -22,6 +22,6 @@ int func4()
 
 void main()
 {
-    int a = func();
+    int a = func4();
     print(a);
 }
