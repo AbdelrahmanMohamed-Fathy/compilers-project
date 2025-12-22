@@ -21,6 +21,7 @@ void insert(char* name, int type, int scope) {
     symbolTable[symbolCount].type = type;
     symbolTable[symbolCount].scope = scope;
     symbolTable[symbolCount].is_initialized = 0;
+    symbolTable[symbolCount].is_func_declared = 0;
     symbolCount++;
 }
 

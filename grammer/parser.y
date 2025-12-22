@@ -86,6 +86,16 @@ FunctionHeader: FunctionStart '(' Parameters ')' {
 
 /* 3. Update Definition: Remove the extra enter_scope() */
 FunctionDefinition: FunctionHeader {
+    Symbol* s = lookup($1);
+    if (s != NULL)
+    {
+        if (s->is_initialized == 1) 
+        {
+            fprintf(stderr, "Semantic Error at line %d: Function '%s' is already defined.\n", yylineno, $1);
+            returnValue = 1;
+        }
+        else s->is_initialized = 1;
+    }
     emit("FUNC_START", $1, NULL, NULL);
     // Scope was already entered in FunctionStart
 } Block {
@@ -94,7 +104,19 @@ FunctionDefinition: FunctionHeader {
 };
 
 /* 4. Update Prototype: Must call exit_scope() because it entered one */
-FunctionPrototype: FunctionHeader ';' { exit_scope(); };
+FunctionPrototype: FunctionHeader ';' { 
+        Symbol* s = lookup($1);
+        if (s != NULL)
+        {
+            if (s->is_func_declared == 1) 
+            {
+                fprintf(stderr, "Semantic Error at line %d: Function '%s' is already declared.\n", yylineno, $1);
+                returnValue = 1;
+            }
+            else s->is_func_declared = 1;
+        }
+        exit_scope(); 
+        };
 
 Parameters: ParameterList | TYPE_VOID | /* empty */ ;
 ParameterList: ParameterList ',' Type VARIABLE { insert($4, $3, current_scope); }

@@ -9,6 +9,7 @@ typedef struct
     int type; // 1: INT, 2: FLOAT, 3: BOOL, etc.
     int scope;
     int is_initialized; // For semantic check: "Variables used before being initialised"
+    int is_func_declared; // For semantic check: "Functions redeclared"
 } Symbol;
 
 /* External declarations so variables are shared across files */
