@@ -167,14 +167,64 @@ Expression: INTEGER_LITERAL {
                 emit("/", $1, $3, t);
                 $$ = t;
             }
+          | Expression '%' Expression {
+                char *t = new_temp();
+                emit("%", $1, $3, t);
+                $$ = t;
+            }
+          | Expression '^' Expression {
+                char *t = new_temp();
+                emit("^", $1, $3, t);
+                $$ = t;
+            }
+          | '-' Expression %prec UMINUS {
+                char *t = new_temp();
+                emit("UMINUS", $2, NULL, t);
+                $$ = t;
+            }
+          | Expression AND Expression {
+                char *t = new_temp();
+                emit("&&", $1, $3, t);
+                $$ = t;
+            }
+          | Expression OR Expression {
+                char *t = new_temp();
+                emit("||", $1, $3, t);
+                $$ = t;
+            }
+          | '!' Expression {
+                char *t = new_temp();
+                emit("!", $2, NULL, t);
+                $$ = t;
+            }
           | Expression EQ Expression {
                 char *t = new_temp();
                 emit("==", $1, $3, t);
                 $$ = t;
             }
+          | Expression NEQ Expression {
+                char *t = new_temp();
+                emit("!=", $1, $3, t);
+                $$ = t;
+            }
+          | Expression LE Expression {
+                char *t = new_temp();
+                emit("<=", $1, $3, t);
+                $$ = t;
+            }
+          | Expression GE Expression {
+                char *t = new_temp();
+                emit(">=", $1, $3, t);
+                $$ = t;
+            }
           | Expression '<' Expression {
                 char *t = new_temp();
                 emit("<", $1, $3, t);
+                $$ = t;
+            }
+          | Expression '>' Expression {
+                char *t = new_temp();
+                emit(">", $1, $3, t);
                 $$ = t;
             }
           | '(' Expression ')' { 
