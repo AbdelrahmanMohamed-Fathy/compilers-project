@@ -6,6 +6,15 @@
 Quad quads[1000];
 int quad_count = 0;
 int temp_count = 0;
+int label_count = 0;
+int stack_ptr = -1;
+char* label_stack[100];
+
+char* new_label() {
+    char* label = (char*)malloc(16);
+    sprintf(label, "L%d", label_count++);
+    return label;
+}
 
 char* new_temp() {
     char* t = malloc(10);
@@ -13,11 +22,18 @@ char* new_temp() {
     return t;
 }
 
+void push_label(char* l) { label_stack[++stack_ptr] = l; }
+char* pop_label() { return label_stack[stack_ptr--]; }
+char* top_label() { 
+    if (stack_ptr == -1) return "ERROR_NO_LOOP";
+    return label_stack[stack_ptr]; 
+}
+
 void emit(char* op, char* arg1, char* arg2, char* res) {
     strcpy(quads[quad_count].op, op);
     strcpy(quads[quad_count].arg1, arg1 ? arg1 : "");
     strcpy(quads[quad_count].arg2, arg2 ? arg2 : "");
-    strcpy(quads[quad_count].res, res);
+    strcpy(quads[quad_count].res, res ? res : "");
     quad_count++;
 }
 

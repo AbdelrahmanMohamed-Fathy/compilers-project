@@ -1,10 +1,7 @@
 %{
     #include <stdio.h>
     #include <stdlib.h>
-    #include <math.h>
     #include <string.h>
-
-    /* Including logic files directly for simplicity in the build process */
     #include "../src/symbol_table.h"
     #include "../src/quads.h"
 
@@ -12,14 +9,16 @@
     void yyerror(const char *s);
     extern int yylineno;
     extern FILE* yyin;
-
     int returnValue = 0;
 
-    /* Semantic Helper: Check if variable exists before use */
+    /* Semantic Helper */
     void check_usage(char* name) {
-        if (lookup(name) == NULL) {
+        Symbol* s = lookup(name);
+        if (s == NULL) {
             fprintf(stderr, "Semantic Error at line %d: Variable '%s' used before declaration.\n", yylineno, name);
-            returnValue = 1;
+            returnValue = 1; 
+        } else if (s->is_initialized == 0) {
+            fprintf(stderr, "Warning at line %d: Variable '%s' is used but may be uninitialized.\n", yylineno, name);
         }
     }
 %}
@@ -30,18 +29,15 @@
     char *stringValue;
 }
 
-/* --- Tokens --- */
 %token <integerValue> INTEGER_LITERAL BOOLEAN_LITERAL
 %token <floatValue>   FLOAT_LITERAL
 %token <stringValue>  VARIABLE
 %token TYPE_INT TYPE_FLOAT TYPE_STRING TYPE_BOOL TYPE_VOID
-%token IF ELSE DO WHILE FOR REPEAT UNTIL SWITCH CASE BREAK DEFAULT
+%token IF ELSE DO WHILE FOR REPEAT UNTIL SWITCH CASE BREAK DEFAULT RETURN
 %token EQ NEQ LE GE AND OR
 
-/* --- Precedence & Associativity --- */
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
-
 %right '='              
 %left OR
 %left AND
@@ -50,24 +46,43 @@
 %left '+' '-'
 %left '*' '/' '%'
 %right '^'
-%right '!' UMINUS       
+%right '!' UMINUS        
 
-/* Expressions return the string name of the variable/temporary */
-%type <stringValue> Expression Assignment 
+%type <stringValue> Expression Assignment ArgumentList
 %type <integerValue> Type
+%type <stringValue> IF_Marker
 
 %%
 
-/* ================================================================ */
-Program: StatementList { 
+Program: GlobalStatements { 
             printf((returnValue == 0) ? ("\n--- Compilation Successful ---\n") : ("\n--- Compilation Failed ---\n"));
             print_symbol_table(); 
             print_quads(); 
          } ;
 
-StatementList: StatementList Statement 
-             | /* empty */ 
+/* Allow Functions OR any Statement at the global level */
+GlobalStatements: GlobalStatements GlobalElement 
+                | /* empty */ 
+                ;
+
+GlobalElement: FunctionDefinition 
+             | Statement 
              ;
+
+/* --- Functions --- */
+FunctionDefinition: Type VARIABLE '(' Parameters ')' {
+                        insert($2, $1, current_scope);
+                        emit("FUNC_START", $2, NULL, NULL);
+                    } Block {
+                        emit("FUNC_END", $2, NULL, NULL);
+                    };
+
+Parameters: ParameterList | TYPE_VOID | /* empty */ ;
+ParameterList: ParameterList ',' Type VARIABLE { insert($4, $3, current_scope); }
+             | Type VARIABLE { insert($2, $1, current_scope); } ;
+
+/* --- Statements --- */
+StatementList: StatementList Statement | /* empty */ ;
 
 Statement: Declaration ';'
          | Assignment ';'
@@ -75,27 +90,139 @@ Statement: Declaration ';'
          | IfStatement
          | LoopStatement
          | SwitchStatement
+         | BREAK ';' { emit("GOTO", top_label(), NULL, NULL); }
+         | RETURN Expression ';' { emit("RET", $2, NULL, NULL); }
          | Block
-         | ';'               
+         | ';'                
          ;
 
 Block: '{' { enter_scope(); } StatementList '}' { exit_scope(); } ;
 
-/* --- Declarations --- */
-Declaration: Type VARIABLE { 
-                insert($2, $1, current_scope); 
+/* --- Control Flow --- */
+IfStatement: IF '(' Expression ')' IF_Marker Statement %prec LOWER_THAN_ELSE {
+                emit("LABEL", $5, NULL, NULL);
              }
+           | IF '(' Expression ')' IF_Marker Statement ELSE {
+                char *exitL = new_label();
+                emit("GOTO", exitL, NULL, NULL);
+                emit("LABEL", $5, NULL, NULL);
+                $<stringValue>$ = exitL;
+             } Statement {
+                emit("LABEL", $<stringValue>8, NULL, NULL);
+             } ;
+
+IF_Marker: {
+            char *label = new_label();
+            emit("IF_FALSE_GOTO", $<stringValue>-1, NULL, label); 
+            $$ = label;
+        } ;
+
+LoopStatement: WHILE {
+                char *startL = new_label();
+                emit("LABEL", startL, NULL, NULL);
+                $<stringValue>$ = startL;
+             } '(' Expression ')' {
+                char *exitL = new_label();
+                emit("IF_FALSE_GOTO", $4, NULL, exitL);
+                push_label(exitL);
+             } Statement {
+                emit("GOTO", $<stringValue>2, NULL, NULL);
+                emit("LABEL", pop_label(), NULL, NULL);
+             } 
+             | REPEAT {
+                char *startL = new_label();
+                char *exitL = new_label();
+                emit("LABEL", startL, NULL, NULL);
+                push_label(exitL);
+                $<stringValue>$ = startL;
+             } Statement UNTIL '(' Expression ')' ';' {
+                emit("IF_FALSE_GOTO", $6, NULL, $<stringValue>2);
+                emit("LABEL", pop_label(), NULL, NULL);
+             }
+             | FOR '(' Assignment ';' {
+                char *condL = new_label();
+                emit("LABEL", condL, NULL, NULL);
+                $<stringValue>$ = condL;
+            } Expression ';' {
+                char *exitL = new_label();
+                char *bodyL = new_label();
+                emit("IF_GOTO", $6, NULL, bodyL);
+                emit("GOTO", exitL, NULL, NULL);
+                push_label(exitL);
+                $<stringValue>$ = bodyL;
+            } Assignment ')' {
+                emit("GOTO", $<stringValue>5, NULL, NULL);
+                emit("LABEL", $<stringValue>8, NULL, NULL);
+            } Statement {
+                emit("GOTO", "INCREMENT_STEP", NULL, NULL); 
+                emit("LABEL", pop_label(), NULL, NULL);
+            } ;
+
+SwitchStatement: SWITCH '(' Expression ')' {
+                    char *exitL = new_label();
+                    push_label(exitL);
+                    $<stringValue>$ = $3;
+                 } '{' CaseList '}' {
+                    emit("LABEL", pop_label(), NULL, NULL);
+                 } ;
+
+CaseList: CaseList Case | /* empty */ ;
+Case: CASE INTEGER_LITERAL ':' {
+        char *nextCase = new_label();
+        char *v = malloc(16); sprintf(v, "%d", $2);
+        char *t = new_temp();
+        emit("==", $<stringValue>-1, v, t);
+        emit("IF_FALSE_GOTO", t, NULL, nextCase);
+        $<stringValue>$ = nextCase;
+      } StatementList {
+        emit("LABEL", $<stringValue>4, NULL, NULL);
+      }
+    | DEFAULT ':' StatementList ;
+
+/* --- Expressions --- */
+Expression: INTEGER_LITERAL { char *v=malloc(16); sprintf(v,"%d",$1); $$=v; }
+          | FLOAT_LITERAL   { char *v=malloc(16); sprintf(v,"%g",$1); $$=v; }
+          | BOOLEAN_LITERAL { char *v=malloc(16); sprintf(v, $1 ? "true" : "false"); $$=v; }
+          | VARIABLE        { check_usage($1); $$=$1; }
+          | VARIABLE '(' ArgumentList ')' {
+                char *t = new_temp();
+                emit("CALL", $1, NULL, t); 
+                $$ = t;
+            }
+          | Expression '+' Expression { char *t=new_temp(); emit("+",$1,$3,t); $$=t; }
+          | Expression '-' Expression { char *t=new_temp(); emit("-",$1,$3,t); $$=t; }
+          | Expression '*' Expression { char *t=new_temp(); emit("*",$1,$3,t); $$=t; }
+          | Expression '/' Expression { char *t=new_temp(); emit("/",$1,$3,t); $$=t; }
+          | Expression '%' Expression { char *t=new_temp(); emit("%",$1,$3,t); $$=t; }
+          | Expression '^' Expression { char *t=new_temp(); emit("^",$1,$3,t); $$=t; }
+          | Expression EQ  Expression { char *t=new_temp(); emit("==",$1,$3,t); $$=t; }
+          | Expression NEQ Expression { char *t=new_temp(); emit("!=",$1,$3,t); $$=t; }
+          | Expression LE  Expression { char *t=new_temp(); emit("<=",$1,$3,t); $$=t; }
+          | Expression GE  Expression { char *t=new_temp(); emit(">=",$1,$3,t); $$=t; }
+          | Expression '<' Expression { char *t=new_temp(); emit("<",$1,$3,t); $$=t; }
+          | Expression '>' Expression { char *t=new_temp(); emit(">",$1,$3,t); $$=t; }
+          | Expression AND Expression { char *t=new_temp(); emit("&&",$1,$3,t); $$=t; }
+          | Expression OR  Expression { char *t=new_temp(); emit("||",$1,$3,t); $$=t; }
+          | '!' Expression            { char *t=new_temp(); emit("!",$2,NULL,t); $$=t; }
+          | '-' Expression %prec UMINUS { char *t=new_temp(); emit("UMINUS",$2,NULL,t); $$=t; }
+          | '(' Expression ')'        { $$ = $2; }
+          ;
+
+ArgumentList: ArgumentList ',' Expression { emit("PARAM", $3, NULL, NULL); }
+            | Expression { emit("PARAM", $1, NULL, NULL); }
+            | /* empty */ { $$ = "0"; }
+            ;
+
+Declaration: Type VARIABLE { insert($2, $1, current_scope); }
            | Type VARIABLE '=' Expression { 
                 insert($2, $1, current_scope);
                 Symbol* s = lookup($2);
                 if(s) s->is_initialized = 1;
-                emit("=", $4, NULL, $2); // Quad: x = val
-             }
-           ;
+                emit("=", $4, NULL, $2);
+             } ;
 
 Type: TYPE_INT {$$=1;} | TYPE_FLOAT {$$=2;} | TYPE_STRING {$$=3;} | TYPE_BOOL {$$=4;} | TYPE_VOID {$$=0;} ;
 
-/* --- Assignment --- */
 Assignment: VARIABLE '=' Expression {
                 check_usage($1);
                 Symbol* s = lookup($1);
@@ -103,134 +230,6 @@ Assignment: VARIABLE '=' Expression {
                 emit("=", $3, NULL, $1);
                 $$ = $1; 
             } ;
-
-IfStatement: IF '(' Expression ')' Statement %prec LOWER_THAN_ELSE
-           | IF '(' Expression ')' Statement ELSE Statement
-
-LoopStatement: REPEAT {
-                // mid-rule action: store the current quad count to jump back to
-                $<integerValue>$ = quad_count; 
-             } 
-             Statement UNTIL '(' Expression ')' ';' {
-                char target[10];
-                sprintf(target, "L%d", $<integerValue>2);
-                emit("IF_FALSE_GOTO", $6, NULL, target);
-             }
-             | WHILE '(' Expression ')' Statement
-             | DO Statement WHILE '(' Expression ')' ';'
-             | FOR '(' Assignment ';' Expression ';' Assignment ')' Statement
-             ;
-
-SwitchStatement: SWITCH '(' Expression ')' '{' CaseList '}' ;
-
-CaseList: CaseList Case | /* empty */ ;
-
-Case: CASE INTEGER_LITERAL ':' StatementList
-    | DEFAULT ':' StatementList
-    ;
-
-/* --- Expressions (Quadruple Generation) --- */
-Expression: INTEGER_LITERAL {
-                char *val = malloc(16);
-                sprintf(val, "%d", $1);
-                $$ = val;
-            }
-          | FLOAT_LITERAL {
-                char *val = malloc(16);
-                sprintf(val, "%g", $1);
-                $$ = val;
-            }
-          | VARIABLE {
-                check_usage($1);
-                Symbol* s = lookup($1);
-                if(s && !s->is_initialized)
-                    fprintf(stderr, "Warning at line %d: Variable '%s' may be uninitialized.\n", yylineno, $1);
-                $$ = $1;
-            }
-          | Expression '+' Expression {
-                char *t = new_temp();
-                emit("+", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '-' Expression {
-                char *t = new_temp();
-                emit("-", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '*' Expression {
-                char *t = new_temp();
-                emit("*", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '/' Expression {
-                char *t = new_temp();
-                emit("/", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '%' Expression {
-                char *t = new_temp();
-                emit("%", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '^' Expression {
-                char *t = new_temp();
-                emit("^", $1, $3, t);
-                $$ = t;
-            }
-          | '-' Expression %prec UMINUS {
-                char *t = new_temp();
-                emit("UMINUS", $2, NULL, t);
-                $$ = t;
-            }
-          | Expression AND Expression {
-                char *t = new_temp();
-                emit("&&", $1, $3, t);
-                $$ = t;
-            }
-          | Expression OR Expression {
-                char *t = new_temp();
-                emit("||", $1, $3, t);
-                $$ = t;
-            }
-          | '!' Expression {
-                char *t = new_temp();
-                emit("!", $2, NULL, t);
-                $$ = t;
-            }
-          | Expression EQ Expression {
-                char *t = new_temp();
-                emit("==", $1, $3, t);
-                $$ = t;
-            }
-          | Expression NEQ Expression {
-                char *t = new_temp();
-                emit("!=", $1, $3, t);
-                $$ = t;
-            }
-          | Expression LE Expression {
-                char *t = new_temp();
-                emit("<=", $1, $3, t);
-                $$ = t;
-            }
-          | Expression GE Expression {
-                char *t = new_temp();
-                emit(">=", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '<' Expression {
-                char *t = new_temp();
-                emit("<", $1, $3, t);
-                $$ = t;
-            }
-          | Expression '>' Expression {
-                char *t = new_temp();
-                emit(">", $1, $3, t);
-                $$ = t;
-            }
-          | '(' Expression ')' { 
-                $$ = $2; 
-            }
-          ;
 
 %%
 
@@ -242,10 +241,7 @@ void yyerror(const char *s) {
 int main(int argc, char **argv) {
     if (argc > 1) {
         FILE *file = fopen(argv[1], "r");
-        if (!file) {
-            perror(argv[1]);
-            return 1;
-        }
+        if (!file) { perror(argv[1]); return 1; }
         yyin = file;
     }
     yyparse();
