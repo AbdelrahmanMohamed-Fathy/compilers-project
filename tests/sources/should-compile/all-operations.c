@@ -7,7 +7,9 @@ int y = 2;
     x = x / 3;
     y = x % 2;
     x = x + 1;
-
+    x ^ y;
+    x = -1;
+    
     // logical operations to be supported:
     x && y;
     x || y;
@@ -17,4 +19,5 @@ int y = 2;
     x >= y;
     x < y;
     x <= y;
+    !(x == y); 
 }
