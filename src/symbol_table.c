@@ -38,7 +38,10 @@ void enter_scope() {
 }
 
 void exit_scope() { 
-    if (current_scope > 0) current_scope--; 
+    while (symbolCount > 0 && symbolTable[symbolCount - 1].scope == current_scope) {
+        symbolCount--;
+    }
+    current_scope--;
 }
 
 void print_symbol_table() {

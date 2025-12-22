@@ -139,24 +139,39 @@ LoopStatement: WHILE {
                 emit("IF_FALSE_GOTO", $6, NULL, $<stringValue>2);
                 emit("LABEL", pop_label(), NULL, NULL);
              }
-             | FOR '(' Assignment ';' {
+             | FOR '(' { enter_scope(); } ForInit ';' {
                 char *condL = new_label();
                 emit("LABEL", condL, NULL, NULL);
                 $<stringValue>$ = condL;
-            } Expression ';' {
+             } Expression ';' {
                 char *exitL = new_label();
                 char *bodyL = new_label();
-                emit("IF_GOTO", $6, NULL, bodyL);
+                char *incrL = new_label();
+                emit("IF_GOTO", $7, NULL, bodyL);
                 emit("GOTO", exitL, NULL, NULL);
+                emit("LABEL", incrL, NULL, NULL);
                 push_label(exitL);
+                push_label(incrL); 
                 $<stringValue>$ = bodyL;
-            } Assignment ')' {
-                emit("GOTO", $<stringValue>5, NULL, NULL);
-                emit("LABEL", $<stringValue>8, NULL, NULL);
-            } Statement {
-                emit("GOTO", "INCREMENT_STEP", NULL, NULL); 
+             } Assignment ')' {
+                emit("GOTO", $<stringValue>6, NULL, NULL);
+                emit("LABEL", $<stringValue>9, NULL, NULL);
+             } Statement {
+                char *incr = pop_label();
+                emit("GOTO", incr, NULL, NULL);
                 emit("LABEL", pop_label(), NULL, NULL);
-            } ;
+                exit_scope(); // Remove the loop iterator from the symbol table
+             } ;
+
+ForInit: Type VARIABLE '=' Expression { 
+                insert($2, $1, current_scope); 
+                Symbol* s = lookup($2);
+                if(s) s->is_initialized = 1;
+                emit("=", $4, NULL, $2);
+             }
+       | Assignment 
+       | /* empty */ 
+       ;
 
 SwitchStatement: SWITCH '(' Expression ')' {
                     char *exitL = new_label();
