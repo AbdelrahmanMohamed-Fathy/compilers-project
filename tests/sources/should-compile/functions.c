@@ -24,5 +24,4 @@ int func4()
 void main()
 {
     int a = func4();
-    print(a);
 }
