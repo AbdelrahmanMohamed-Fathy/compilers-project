@@ -4,6 +4,7 @@ clean:
 	rm -rf bin
 
 test:
+	clear
 	pytest -v -s --tb=no
 
 quiet_test:
@@ -16,6 +17,7 @@ build:
 	gcc bin/parser.tab.c bin/lex.yy.c src/symbol_table.c src/quads.c -o bin/compiler.exe -lm
 
 all:
+	clear
 	$(MAKE) clean
 	$(MAKE) build
 	$(MAKE) quiet_test

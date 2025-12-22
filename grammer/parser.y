@@ -9,7 +9,11 @@
     void yyerror(const char *s);
     extern int yylineno;
     extern FILE* yyin;
+
     int returnValue = 0;
+
+    int forScopeFlag = 0;
+    int isInsideBreakable = 0;
 
     /* Semantic Helper */
     void check_usage(char* name) {
@@ -131,14 +135,24 @@ Statement: Declaration ';'
          | IfStatement
          | LoopStatement
          | SwitchStatement
-         | BREAK ';' { emit("GOTO", top_label(), NULL, NULL); }
+         | BREAK ';' { 
+            if (isInsideBreakable > 0)
+            {
+                emit("GOTO", top_label(), NULL, NULL); 
+            }
+            else 
+            {
+                fprintf(stderr, "Semantic Error at line %d: invalid break.\n", yylineno);
+                returnValue = 1;
+            }
+            }
          | RETURN ';' { emit("RET", NULL, NULL, NULL); }
          | RETURN Expression ';' { emit("RET", $2, NULL, NULL); }
          | Block
          | ';'                
          ;
 
-Block: '{' { enter_scope(); } StatementList '}' { exit_scope(); } ;
+Block: '{' { if(forScopeFlag == 0) enter_scope(); } StatementList '}' { if(forScopeFlag == 0) exit_scope(); } ;
 
 /* --- Control Flow --- */
 IfStatement: IF '(' Expression ')' IF_Marker Statement %prec LOWER_THAN_ELSE {
@@ -167,11 +181,14 @@ LoopStatement: WHILE {
                 char *exitL = new_label();
                 emit("IF_FALSE_GOTO", $4, NULL, exitL);
                 push_label(exitL);
+                isInsideBreakable++;
              } Statement {
                 emit("GOTO", $<stringValue>2, NULL, NULL);
                 emit("LABEL", pop_label(), NULL, NULL);
+                isInsideBreakable--;
              } 
              | REPEAT {
+                isInsideBreakable++;
                 char *startL = new_label();
                 char *exitL = new_label();
                 emit("LABEL", startL, NULL, NULL);
@@ -180,8 +197,9 @@ LoopStatement: WHILE {
              } Statement UNTIL '(' Expression ')' ';' {
                 emit("IF_FALSE_GOTO", $6, NULL, $<stringValue>2);
                 emit("LABEL", pop_label(), NULL, NULL);
+                isInsideBreakable--;
              }
-             | FOR '(' { enter_scope(); } ForInit ';' {
+             | FOR '(' {enter_scope(); forScopeFlag++;} ForInit ';' {
                 char *condL = new_label();
                 emit("LABEL", condL, NULL, NULL);
                 $<stringValue>$ = condL;
@@ -193,16 +211,19 @@ LoopStatement: WHILE {
                 emit("GOTO", exitL, NULL, NULL);
                 emit("LABEL", incrL, NULL, NULL);
                 push_label(exitL);
-                push_label(incrL); 
+                push_label(incrL);
                 $<stringValue>$ = bodyL;
              } Assignment ')' {
                 emit("GOTO", $<stringValue>6, NULL, NULL);
                 emit("LABEL", $<stringValue>9, NULL, NULL);
+                isInsideBreakable++;
              } Statement {
                 char *incr = pop_label();
                 emit("GOTO", incr, NULL, NULL);
                 emit("LABEL", pop_label(), NULL, NULL);
+                isInsideBreakable--;
                 exit_scope(); // Remove the loop iterator from the symbol table
+                forScopeFlag--;
              } ;
 
 ForInit: Type VARIABLE '=' Expression { 
@@ -217,10 +238,12 @@ ForInit: Type VARIABLE '=' Expression {
 
 SwitchStatement: SWITCH '(' Expression ')' {
                     char *exitL = new_label();
+                    isInsideBreakable++;
                     push_label(exitL);
                     $<stringValue>$ = $3;
                  } '{' CaseList '}' {
                     emit("LABEL", pop_label(), NULL, NULL);
+                    isInsideBreakable--;
                  } ;
 
 CaseList: CaseList Case | /* empty */ ;
