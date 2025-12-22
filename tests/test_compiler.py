@@ -9,6 +9,8 @@ EXECUTABLE_PATH = Path("./bin/compiler.exe").resolve()
 
 TEST_DIR = Path(__file__).parent
 SHOULD_COMPILE_DIR = TEST_DIR / "sources" / "should-compile"
+SHOULD_COMPILE_DIR_WITH_WARNING = TEST_DIR / \
+    "sources" / "should-compile-with-warning"
 SHOULD_NOT_COMPILE_DIR = TEST_DIR / "sources" / "should-not-compile"
 
 # --- Helper Functions ---
@@ -63,6 +65,29 @@ def test_should_compile(file_path):
     )
 
     assert result.returncode == 0, error_msg
+
+
+@pytest.mark.parametrize("file_path", get_test_files(SHOULD_COMPILE_DIR_WITH_WARNING))
+def test_should_compile_with_warning(file_path):
+    """
+    Expects the compiler to return exit code 0 (Success).
+    """
+    result = run_compiler(file_path)
+
+    # --- Print output ---
+    print(f"\n[{file_path.name}] STDOUT:\n{result.stdout}")
+    if result.stderr:
+        print(f"[{file_path.name}] STDERR:\n{result.stderr}")
+    # -----------------------------------------------------
+
+    error_msg = (
+        f"File '{file_path.name}' failed to compile.\n"
+        f"Stderr: {result.stderr}\n"
+        f"Stdout: {result.stdout}"
+    )
+
+    assert result.returncode == 0, error_msg
+    assert result.stderr, "Compiled with no warnings"
 
 
 @pytest.mark.parametrize("file_path", get_test_files(SHOULD_NOT_COMPILE_DIR))
