@@ -1,5 +1,7 @@
-// unused variable
-int x;
+void main(){
+    // unused variable
+    int x;
 
-// uninitialized
-x = x + 1;
+    // uninitialized
+    x = x + 1;
+}

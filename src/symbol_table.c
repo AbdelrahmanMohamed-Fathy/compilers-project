@@ -10,7 +10,6 @@ int current_scope = 0;
 extern int returnValue;
 
 void insert(char* name, int type, int scope) {
-    // Check if already declared in SAME scope (Semantic Error check)
     for(int i = 0; i < symbolCount; i++) {
         if(strcmp(symbolTable[i].name, name) == 0 && symbolTable[i].scope == scope) {
             fprintf(stderr, "Semantic Error: Variable '%s' already declared in this scope.\n", name);
@@ -26,7 +25,6 @@ void insert(char* name, int type, int scope) {
 }
 
 Symbol* lookup(char* name) {
-    // Search from current scope upwards
     for(int i = symbolCount - 1; i >= 0; i--) {
         if(strcmp(symbolTable[i].name, name) == 0 && symbolTable[i].scope <= current_scope) {
             return &symbolTable[i];
@@ -35,10 +33,12 @@ Symbol* lookup(char* name) {
     return NULL;
 }
 
-void enter_scope() { current_scope++; }
+void enter_scope() { 
+    current_scope++; 
+}
+
 void exit_scope() { 
-    // Optional: Clean up symbols of the exiting scope
-    current_scope--; 
+    if (current_scope > 0) current_scope--; 
 }
 
 void print_symbol_table() {
