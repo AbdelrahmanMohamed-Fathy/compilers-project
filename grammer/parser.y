@@ -190,13 +190,19 @@ LoopStatement: WHILE {
              | REPEAT {
                 isInsideBreakable++;
                 char *startL = new_label();
-                char *exitL = new_label();
                 emit("LABEL", startL, NULL, NULL);
-                push_label(exitL);
                 $<stringValue>$ = startL;
              } Statement UNTIL '(' Expression ')' ';' {
                 emit("IF_FALSE_GOTO", $6, NULL, $<stringValue>2);
-                emit("LABEL", pop_label(), NULL, NULL);
+                isInsideBreakable--;
+             }
+             | DO {
+                isInsideBreakable++;
+                char *startL = new_label();
+                emit("LABEL", startL, NULL, NULL);
+                $<stringValue>$ = startL;
+             } Statement WHILE '(' Expression ')' ';' {
+                emit("IF_GOTO", $6, NULL, $<stringValue>2);
                 isInsideBreakable--;
              }
              | FOR '(' {enter_scope(); forScopeFlag++;} ForInit ';' {
