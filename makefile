@@ -4,10 +4,10 @@ clean:
 	rm -rf bin
 
 test:
-	pytest -s --tb=no
+	pytest -v -s --tb=no
 
 quiet_test:
-	pytest --tb=no
+	pytest -v --tb=no
 
 build:
 	mkdir bin

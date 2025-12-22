@@ -16,6 +16,10 @@ SHOULD_NOT_COMPILE_DIR = TEST_DIR / "sources" / "should-not-compile"
 # --- Helper Functions ---
 
 
+def get_file_name(file_path):
+    return file_path.name
+
+
 def get_test_files(directory):
     """
     Returns a list of .c files in the given directory.
@@ -45,7 +49,7 @@ def run_compiler(file_path):
 # --- Tests ---
 
 
-@pytest.mark.parametrize("file_path", get_test_files(SHOULD_COMPILE_DIR))
+@pytest.mark.parametrize("file_path", get_test_files(SHOULD_COMPILE_DIR), ids=get_file_name)
 def test_should_compile(file_path):
     """
     Expects the compiler to return exit code 0 (Success).
@@ -67,7 +71,7 @@ def test_should_compile(file_path):
     assert result.returncode == 0, error_msg
 
 
-@pytest.mark.parametrize("file_path", get_test_files(SHOULD_COMPILE_DIR_WITH_WARNING))
+@pytest.mark.parametrize("file_path", get_test_files(SHOULD_COMPILE_DIR_WITH_WARNING), ids=get_file_name)
 def test_should_compile_with_warning(file_path):
     """
     Expects the compiler to return exit code 0 (Success).
@@ -90,7 +94,7 @@ def test_should_compile_with_warning(file_path):
     assert result.stderr, "Compiled with no warnings"
 
 
-@pytest.mark.parametrize("file_path", get_test_files(SHOULD_NOT_COMPILE_DIR))
+@pytest.mark.parametrize("file_path", get_test_files(SHOULD_NOT_COMPILE_DIR), ids=get_file_name)
 def test_should_not_compile(file_path):
     """
     Expects the compiler to return a non-zero exit code (Failure).
