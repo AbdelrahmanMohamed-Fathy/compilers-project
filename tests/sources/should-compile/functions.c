@@ -1,16 +1,15 @@
 
-
-void func();
-void func(int x);
+int func();
+void func3(float y);
 int func1(int x, int y, float z);
 // ===========================================================
-void func2(float y)
+void func3(float y)
 {
     y + 1;
     return;
 }
 
-int func2()
+int func()
 {
     int y;
     y + 1;

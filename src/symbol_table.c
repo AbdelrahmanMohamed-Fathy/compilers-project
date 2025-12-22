@@ -26,12 +26,13 @@ void insert(char* name, int type, int scope) {
 
 Symbol* lookup(char* name) {
     for(int i = symbolCount - 1; i >= 0; i--) {
-        if(strcmp(symbolTable[i].name, name) == 0 && symbolTable[i].scope <= current_scope) {
+        if(strcmp(symbolTable[i].name, name) == 0) {
             return &symbolTable[i];
         }
     }
     return NULL;
 }
+
 
 void enter_scope() { 
     current_scope++; 

@@ -48,7 +48,7 @@
 %right '^'
 %right '!' UMINUS        
 
-%type <stringValue> Expression Assignment ArgumentList
+%type <stringValue> Expression Assignment ArgumentList FunctionHeader FunctionStart
 %type <integerValue> Type
 %type <stringValue> IF_Marker
 
@@ -60,22 +60,41 @@ Program: GlobalStatements {
             print_quads(); 
          } ;
 
-/* Allow Functions OR any Statement at the global level */
 GlobalStatements: GlobalStatements GlobalElement 
                 | /* empty */ 
                 ;
 
 GlobalElement: FunctionDefinition 
+             | FunctionPrototype
              | Statement 
              ;
 
 /* --- Functions --- */
-FunctionDefinition: Type VARIABLE '(' Parameters ')' {
-                        insert($2, $1, current_scope);
-                        emit("FUNC_START", $2, NULL, NULL);
-                    } Block {
-                        emit("FUNC_END", $2, NULL, NULL);
-                    };
+FunctionStart: Type VARIABLE {
+    Symbol* s = lookup($2);
+    if (s == NULL) {
+        insert($2, $1, current_scope);
+    }
+    enter_scope(); // Enter scope BEFORE parameters are parsed
+    $$ = $2;
+};
+
+/* 2. Update Header to use FunctionStart */
+FunctionHeader: FunctionStart '(' Parameters ')' {
+    $$ = $1; 
+};
+
+/* 3. Update Definition: Remove the extra enter_scope() */
+FunctionDefinition: FunctionHeader {
+    emit("FUNC_START", $1, NULL, NULL);
+    // Scope was already entered in FunctionStart
+} Block {
+    emit("FUNC_END", $1, NULL, NULL);
+    exit_scope();
+};
+
+/* 4. Update Prototype: Must call exit_scope() because it entered one */
+FunctionPrototype: FunctionHeader ';' { exit_scope(); };
 
 Parameters: ParameterList | TYPE_VOID | /* empty */ ;
 ParameterList: ParameterList ',' Type VARIABLE { insert($4, $3, current_scope); }
@@ -91,6 +110,7 @@ Statement: Declaration ';'
          | LoopStatement
          | SwitchStatement
          | BREAK ';' { emit("GOTO", top_label(), NULL, NULL); }
+         | RETURN ';' { emit("RET", NULL, NULL, NULL); }
          | RETURN Expression ';' { emit("RET", $2, NULL, NULL); }
          | Block
          | ';'                
