@@ -15,3 +15,14 @@ int func()
     y + 1;
     return y;
 }
+
+int func4()
+{
+    return 1;
+}
+
+void main()
+{
+    int a = func4();
+    print(a);
+}

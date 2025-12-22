@@ -220,6 +220,7 @@ Expression: INTEGER_LITERAL { char *v=malloc(16); sprintf(v,"%d",$1); $$=v; }
           | BOOLEAN_LITERAL { char *v=malloc(16); sprintf(v, $1 ? "true" : "false"); $$=v; }
           | VARIABLE        { check_usage($1); $$=$1; }
           | VARIABLE '(' ArgumentList ')' {
+                check_usage($1);
                 char *t = new_temp();
                 emit("CALL", $1, NULL, t); 
                 $$ = t;
