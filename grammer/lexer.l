@@ -42,7 +42,7 @@
 "&&"            { return AND; }
 "||"            { return OR; }
 
-[-+*/%^=(){};:,<>] { return yytext[0]; }
+[-+*/%^=(){};:,<>!] { return yytext[0]; }
 
 [ \t\n]         { /* ignore */ }
 "//".* { /* ignore single line comments */ }
